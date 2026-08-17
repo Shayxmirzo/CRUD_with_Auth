@@ -7,7 +7,7 @@ import Product from "./pages/Product"
 import Cookies from "js-cookie"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
-import ProtectekRoute from "./components/ProtectekRoute"
+import ProtectekRoute from "./components/protectekRoute"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 function App() {
