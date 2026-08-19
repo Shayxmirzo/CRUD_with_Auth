@@ -22,6 +22,7 @@ const emptyForm = {
 };
 
 function Product() {
+
   const {
     data: products,
     loading,
@@ -29,30 +30,38 @@ function Product() {
     refresh,
   } = useGet("/products");
 
+
   const {
     deleteData,
     loading: deleteLoading,
   } = useDelete("/products");
+
 
   const {
     postData,
     loading: postLoading,
   } = usePost("/products");
 
+
   const {
     putData,
     loading: putLoading,
   } = usePut("/products");
 
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
+
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const [formData, setFormData] = useState(emptyForm);
+  const [formData, setFormData] = useState({
+    ...emptyForm,
+  });
 
-  // =========================
-  // OPEN ADD MODAL
-  // =========================
+  // ID of the product currently being deleted
+  const [deletingId, setDeletingId] = useState(null);
+
 
   const handleCreate = () => {
     setIsEditing(false);
@@ -65,9 +74,7 @@ function Product() {
     setIsModalOpen(true);
   };
 
-  // =========================
-  // OPEN EDIT MODAL
-  // =========================
+
 
   const handleEdit = (product) => {
     setIsEditing(true);
@@ -81,48 +88,52 @@ function Product() {
       weight: product.weight || "",
       calories: product.calories || "",
       discount: product.discount || "",
+
       isSpicy: product.isSpicy || false,
       isPopular: product.isPopular || false,
       isVegetarian: product.isVegetarian || false,
+
       rating: product.rating || "",
+
       ingredients: product.ingredients
         ? product.ingredients.join(", ")
         : "",
-      productDescription: product.productDescription || "",
+
+      productDescription:
+        product.productDescription || "",
+
       categoryId: product.categoryId || "",
     });
 
     setIsModalOpen(true);
   };
 
-  // =========================
-  // CLOSE MODAL
-  // =========================
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setIsEditing(false);
     setSelectedProduct(null);
-    setFormData({ ...emptyForm });
+
+    setFormData({
+      ...emptyForm,
+    });
   };
-
-  // =========================
-  // INPUT CHANGE
-  // =========================
-
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
     }));
   };
-
-  // =========================
-  // SUBMIT
-  // =========================
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -147,50 +158,60 @@ function Product() {
         .map((item) => item.trim())
         .filter(Boolean),
 
-      productDescription: formData.productDescription,
+      productDescription:
+        formData.productDescription,
 
       categoryId: formData.categoryId,
     };
 
     try {
       if (isEditing) {
-        await putData(selectedProduct.id, productData);
+        await putData(
+          selectedProduct.id,
+          productData
+        );
       } else {
         await postData(productData);
       }
 
       handleCloseModal();
+
       refresh();
     } catch (error) {
-      console.log("CRUD error:", error);
+      console.log("CRUD ERROR:", error);
     }
   };
+   const handleDelete = async (id) => {
+  setDeletingId(id);
 
-  // =========================
-  // DELETE
-  // =========================
-
-  const handleDelete = async (id) => {
-    try {
-      await deleteData(id);
-      refresh();
-    } catch (error) {
-      console.log("DELETE ERROR:", error);
-    }
-  };
+  try {
+    await deleteData(id);
+    refresh();
+  } catch (error) {
+    console.log("DELETE ERROR:", error);
+  } finally {
+    setDeletingId(null);
+  }
+};
 
   if (loading) {
     return <p>Loading...</p>;
   }
 
+  // =========================
+  // ERROR
+  // =========================
+
   if (error) {
     return <p>Something went wrong...</p>;
   }
 
+  // =========================
+  // JSX
+  // =========================
+
   return (
     <div className="p-5">
-
-      {/* ================= HEADER ================= */}
 
       <div className="flex items-center justify-between mb-6">
 
@@ -207,59 +228,78 @@ function Product() {
 
       </div>
 
-      {/* ================= PRODUCTS ================= */}
-
       <div className="flex flex-col gap-3">
 
-        {products.map((el) => (
-          <div
-            key={el.id}
-            className="h-24 w-full border flex px-3 items-center border-gray-300 rounded-[15px] bg-white"
-          >
-            <div className="flex items-center gap-4 w-full">
+        {products.map((el) => {
 
-              <div className="h-18 w-18 shrink-0">
-                <img
-                  className="w-full h-full rounded-xl object-contain"
-                  src={el.productImg}
-                  alt={el.productName}
-                />
-              </div>
+          // Check whether THIS product is being deleted
+          const isDeleting = deletingId === el.id;
 
-              <div className="flex items-center justify-between w-full">
+          return (
+            <div
+              key={el.id}
+              className="h-24 w-full border flex px-3 items-center border-gray-300 rounded-[15px] bg-white"
+            >
 
-                <div>
-                  <h2 className="text-[23px] font-medium">
-                    {el.productName}
-                  </h2>
+              <div className="flex items-center gap-4 w-full">
 
-                  <p className="text-gray-500">
-                    {el.productDescription}
-                  </p>
+
+                <div className="h-18 w-18 shrink-0">
+
+                  <img
+                    className="w-full h-full rounded-xl object-contain"
+                    src={el.productImg}
+                    alt={el.productName}
+                  />
+
                 </div>
 
-                <div className="flex items-center gap-5">
+                <div className="flex items-center justify-between w-full">
 
-                  <p className="text-[20px] font-semibold">
-                    ${el.price}
-                  </p>
+                  <div>
 
-                  <div className="flex gap-3">
+                    <h2 className="text-[23px] font-medium">
+                      {el.productName}
+                    </h2>
 
-                    <button
-                      onClick={() => handleEdit(el)}
-                      className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold"
-                    >
-                      Edit
-                    </button>
+                    <p className="text-gray-500">
+                      {el.productDescription}
+                    </p>
 
-                    <button
-                      disabled={deleteLoading}
-                      onClick={() => handleDelete(el.id)}
-                      className="px-4 py-2 rounded-xl bg-red-600 text-white font-bold disabled:opacity-50"
-                    >
-                      {deleteLoading ? "Deleting..." : "Delete"}
-                    </button>
+                  </div>
+
+      
+                  <div className="flex items-center gap-5">
+
+                    <p className="text-[20px] font-semibold">
+                      ${el.price}
+                    </p>
+
+                    <div className="flex gap-3">
+
+                      {/* EDIT */}
+
+                      <button
+                        onClick={() => handleEdit(el)}
+                        disabled={deleteLoading}
+                        className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold disabled:opacity-50"
+                      >
+                        Edit
+                      </button>
+
+                      {/* DELETE */}
+
+                      <button
+                        disabled={deleteLoading}
+                        onClick={() => handleDelete(el.id)}
+                        className="px-4 py-2 rounded-xl bg-red-600 text-white font-bold disabled:opacity-50"
+                      >
+                        {isDeleting
+                          ? "Deleting..."
+                          : "Delete"}
+                      </button>
+
+                    </div>
 
                   </div>
 
@@ -268,24 +308,22 @@ function Product() {
               </div>
 
             </div>
-          </div>
-        ))}
+          );
+        })}
 
       </div>
-
-      {/* ================= MODAL ================= */}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-5">
 
           <div className="w-full max-w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6">
 
-            {/* Modal header */}
-
             <div className="flex items-center justify-between mb-6">
 
               <h2 className="text-2xl font-bold">
-                {isEditing ? "Edit Product" : "Add Product"}
+                {isEditing
+                  ? "Edit Product"
+                  : "Add Product"}
               </h2>
 
               <button
@@ -298,16 +336,13 @@ function Product() {
 
             </div>
 
-            {/* ================= FORM ================= */}
-
             <form
               onSubmit={handleSubmit}
               className="flex flex-col gap-4"
             >
 
-              {/* Product name */}
-
               <div>
+
                 <label className="block mb-1 font-medium">
                   Product name
                 </label>
@@ -321,11 +356,13 @@ function Product() {
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
                   required
                 />
+
               </div>
 
-              {/* Image */}
+              {/* IMAGE */}
 
               <div>
+
                 <label className="block mb-1 font-medium">
                   Product image
                 </label>
@@ -339,13 +376,15 @@ function Product() {
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
                   required
                 />
+
               </div>
 
-              {/* Price + size */}
+              {/* PRICE + SIZE */}
 
               <div className="grid grid-cols-2 gap-4">
 
                 <div>
+
                   <label className="block mb-1 font-medium">
                     Price
                   </label>
@@ -359,9 +398,11 @@ function Product() {
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
                     required
                   />
+
                 </div>
 
                 <div>
+
                   <label className="block mb-1 font-medium">
                     Size
                   </label>
@@ -373,15 +414,17 @@ function Product() {
                     onChange={handleChange}
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
                   />
+
                 </div>
 
               </div>
 
-              {/* Weight + calories */}
+              {/* WEIGHT + CALORIES */}
 
               <div className="grid grid-cols-2 gap-4">
 
                 <div>
+
                   <label className="block mb-1 font-medium">
                     Weight
                   </label>
@@ -393,9 +436,11 @@ function Product() {
                     onChange={handleChange}
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
                   />
+
                 </div>
 
                 <div>
+
                   <label className="block mb-1 font-medium">
                     Calories
                   </label>
@@ -407,15 +452,17 @@ function Product() {
                     onChange={handleChange}
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
                   />
+
                 </div>
 
               </div>
 
-              {/* Discount + rating */}
+              {/* DISCOUNT + RATING */}
 
               <div className="grid grid-cols-2 gap-4">
 
                 <div>
+
                   <label className="block mb-1 font-medium">
                     Discount
                   </label>
@@ -427,9 +474,11 @@ function Product() {
                     onChange={handleChange}
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
                   />
+
                 </div>
 
                 <div>
+
                   <label className="block mb-1 font-medium">
                     Rating
                   </label>
@@ -442,13 +491,14 @@ function Product() {
                     onChange={handleChange}
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
                   />
+
                 </div>
 
               </div>
 
-              {/* Category */}
 
               <div>
+
                 <label className="block mb-1 font-medium">
                   Category ID
                 </label>
@@ -462,11 +512,11 @@ function Product() {
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
                   required
                 />
+
               </div>
 
-              {/* Ingredients */}
-
               <div>
+
                 <label className="block mb-1 font-medium">
                   Ingredients
                 </label>
@@ -483,11 +533,12 @@ function Product() {
                 <p className="mt-1 text-sm text-gray-400">
                   Separate ingredients with commas
                 </p>
+
               </div>
 
-              {/* Description */}
 
               <div>
+
                 <label className="block mb-1 font-medium">
                   Description
                 </label>
@@ -500,49 +551,59 @@ function Product() {
                   rows={3}
                   className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 outline-none"
                 />
-              </div>
 
-              {/* Checkboxes */}
+              </div>
 
               <div className="grid grid-cols-3 gap-3">
 
                 <label className="flex items-center gap-2">
+
                   <input
                     type="checkbox"
                     name="isSpicy"
                     checked={formData.isSpicy}
                     onChange={handleChange}
                   />
+
                   Spicy
+
                 </label>
 
                 <label className="flex items-center gap-2">
+
                   <input
                     type="checkbox"
                     name="isPopular"
                     checked={formData.isPopular}
                     onChange={handleChange}
                   />
+
                   Popular
+
                 </label>
 
                 <label className="flex items-center gap-2">
+
                   <input
                     type="checkbox"
                     name="isVegetarian"
                     checked={formData.isVegetarian}
                     onChange={handleChange}
                   />
+
                   Vegetarian
+
                 </label>
 
               </div>
 
-              {/* Submit */}
 
               <button
                 type="submit"
-                disabled={postLoading || putLoading}
+                disabled={
+                  postLoading ||
+                  putLoading
+                }
                 className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-lg font-bold text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {postLoading || putLoading

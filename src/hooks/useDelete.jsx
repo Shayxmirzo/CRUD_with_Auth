@@ -1,21 +1,38 @@
 import { useState } from "react";
 import api from "../API/AxiosInstance";
 
-function useDelete(url) {
+const useDelete = (url) => {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const deleteData = async (id) => {
+  const deleteData = async (id, customBaseUrl = url) => {
+    setLoading(true);
+    setError(null);
+
+    const targetUrl = id
+      ? `${customBaseUrl}/${id}`
+      : customBaseUrl;
+
+    console.log("[useDelete] delete >", targetUrl);
+
     try {
-      setLoading(true);
-      setError(null);
+      const res = await api.delete(targetUrl);
 
-      const response = await api.delete(`${url}/${id}`);
+      setData(res.data);
 
-      return response.data;
-    } catch (error) {
-      setError(error);
-      throw error;
+      return res.data;
+    } catch (err) {
+      const errMessage =
+        err?.response?.data ||
+        err?.message ||
+        "Something went wrong";
+
+      setError(errMessage);
+
+      console.error("[useDelete] error >", err);
+
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -23,9 +40,11 @@ function useDelete(url) {
 
   return {
     deleteData,
+    execute: deleteData,
+    data,
     loading,
     error,
   };
-}
+};
 
 export default useDelete;
